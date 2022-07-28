@@ -1,0 +1,41 @@
+{% extends "index.html" %}
+{% block data %}
+{% if task != Null %}
+<h2>Task 1</h2>
+    <div>
+        <form action="/funone" method="POST">
+            {{ task.csrf_token() }}
+            {{ task.num1.label }} {{ task.num1 }}<br/><br/>
+            {{ task.num2.label }} {{ task.num2 }}<br/><br/>
+            {{ task.num.label }} {{ task.num }}<br/><br/>
+            {{ task.subMit }}
+        </form>
+    </div><br/><br/>
+{% endif %}
+
+{% if data == 1 %}
+
+<div>
+
+    <table>
+          <tr>
+               <th>D</th>
+               <th>T</th>
+               <th>Name</th>
+               <th>Time</th>
+            
+           </tr>
+           {% for i in rst  %}
+           <tr>
+               <td>{{ i[0] }}</td>
+               <td>{{ i[1] }}</td>
+               <td>{{ i[2] }}</td>
+              <td>{{ t }}</td>
+              
+           </tr>
+           {% endfor%}
+       </table>
+</div>
+
+{% endif %}
+{% endblock %}
