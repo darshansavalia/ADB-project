@@ -1,17 +1,14 @@
 from datetime import date, timedelta
+from itertools import count
 from sys import implementation
-from winreg import QueryInfoKey
+from unittest import result
 from flask import Flask, render_template,request
 from flask_wtf import FlaskForm
-from sqlalchemy import VARCHAR, String
+from sqlalchemy import VARCHAR
 from wtforms import StringField, SubmitField
 from geopy.distance import geodesic
 from sqlalchemy.sql import text
-import redis
-import time
 import pyodbc
-import hashlib
-import pickle
 
 app = Flask(__name__)
 
@@ -28,18 +25,8 @@ with pyodbc.connect(
      with conn.cursor() as cursor:
         temp=[]
 
-'''cursor.execute("SELECT * FROM quiz")
 
-rst = []
-while True:
-    rwData = cursor.fetchone()
-    if not rwData:
-        break
-    rst.append(rwData)
-print(rst)'''     
-
-
-r=redis.StrictRedis(host='darshanadbredis.redis.cache.windows.net', port=6380, password='7IC62WqWrkfigQQXvxPeyyXumgvS48irGAzCaIXED8k=',ssl=True)
+#r=redis.StrictRedis(host='darshanadbredis.redis.cache.windows.net', port=6380, password='7IC62WqWrkfigQQXvxPeyyXumgvS48irGAzCaIXED8k=',ssl=True)
 
 
 @app.route("/",methods=['GET', 'POST'])
@@ -47,75 +34,55 @@ def index():
     return render_template("index.html")
 
 class taskone(FlaskForm):
-    num1 = StringField(label="Enter Number for range =")
-    num2 = StringField(label="Enter Number for range =")
-    num=StringField(label="Enter the number=")
+    magnitude = StringField(label="Enter magnitude =")
     subMit = SubmitField(label="Submit")
 
 @app.route('/funone', methods=['GET', 'POST'])
 def funone():
     task = taskone()
-    if task.validate_on_submit():
+    cnt=0
+           
+    #cursor.execute('SELECT count(*) as "Mag less than 1.0" from all_month where mag < 1 UNION SELECT count(*) as "Mag. between 1.0 to 2.0" from all_month where mag >= 1.0 and  mag <2.0 UNION SELECT count(*) as "Mag. between 2.0 to 3.0" from all_month where mag >= 2.0 and mag < 3.0 UNION SELECT count(*) as "Mag. between 3.0 to 4.0" from all_month where mag >= 3.0 and mag < 4.0 UNION SELECT count(*) as "Mag. between 4.0 to 5.0" from all_month where mag >= 4.0 and mag < 5.0 UNION SELECT count(*) as "Mag. grater than 5.0" from all_month where mag >= 5.0')
 
-        num1=float(task.num1.data)
-        num2=float(task.num2.data)
-        num=int(task.num.data)
+    cursor.execute('SELECT count(*) as "Mag. less than 1.0" from all_month where mag < 1')
+    columns = [column[0] for column in cursor.description]
+    for row in cursor.fetchall():
+        result = {columns[0]: row[0]}
+        cnt += row[0]
 
-        t=[]
-        for i in range(num):
-            t1=time.time()
-            cursor.execute("SELECT TOP "+str(num)+" * from quiz where D between "+str(num1)+" and "+str(num2)+"")    
-            rst = []
-            while True:
-                rwData = cursor.fetchone()
-                if not rwData:
-                    break
-                rst.append(rwData)
-            t2=time.time()
-            t.append(t2-t1)
-            
-        return render_template('taskone.html',rst=rst, task=task,num=num,num1=num1,num2=num2,t=t,data=1)
+        cursor.execute('SELECT count(*) as "Mag. between 1.0 to 2.0" from all_month where mag >= 1.0 and  mag <2.0')
+        columns = [column[0] for column in cursor.description]
+        for row in cursor.fetchall():
+            result[columns[0]] = row[0]
+            cnt += row[0]
+
+        cursor.execute('SELECT count(*) as "Mag. between 2.0 to 3.0" from all_month where mag >= 2.0 and mag < 3.0')
+        columns = [column[0] for column in cursor.description]
+        for row in cursor.fetchall():
+            result[columns[0]] = row[0]
+            cnt += row[0]
+
+        cursor.execute('SELECT count(*) as "Mag. between 3.0 to 4.0" from all_month where mag >= 3.0 and mag < 4.0')
+        columns = [column[0] for column in cursor.description]
+        for row in cursor.fetchall():
+            result[columns[0]] = row[0]
+            cnt += row[0]
+
+        cursor.execute('SELECT count(*) as "Mag. between 4.0 to 5.0" from all_month where mag >= 4.0 and mag < 5.0')
+        columns = [column[0] for column in cursor.description]
+        for row in cursor.fetchall():
+            result[columns[0]] = row[0]
+            cnt += row[0]
+
+        cursor.execute('SELECT count(*) as "Mag. grater than 5.0" from all_month where mag >= 5.0')
+        columns = [column[0] for column in cursor.description]
+        for row in cursor.fetchall():
+            result[columns[0]] = row[0]
+            cnt += row[0]
+
+
+        return render_template('taskone.html', result=result, cnt=cnt, data=1)   
     return render_template('taskone.html', task=task)
-
-class tasktwo(FlaskForm):
-    num1 = StringField(label="Enter Number for range =")
-    num2 = StringField(label="Enter Number for range =")
-    num=StringField(label="Enter the number=")
-    subMit = SubmitField(label="Submit")
-
-@app.route('/funtwo', methods=['GET', 'POST'])
-def funtwo():
-    task = tasktwo()
-    if task.validate_on_submit():
-
-        num1=float(task.num1.data)
-        num2=float(task.num2.data)
-        num=int(task.num.data)
-
-        t=[]
-        for i in range(num):
-            t1=time.time()
-            
-            query=f'SELECT TOP {num} * from quiz where D between {num1} and {num2}'  
-            hash=hashlib.sha256(query.encode()).hexdigest()
-            key="darshan_rd" +hash
-            rst=[]
-
-            if(r.get(key)):
-                pass
-            else:
-                 cursor.execute(query)
-                 rows=cursor.fetchall()
-
-                 r.set(key,pickle.dumps(rows))
-                 r.expire(key,360)
-
-                 rst.append(rows)
-            t2=time.time()
-            t.append(t2-t1)
-            
-        return render_template('tasktwo.html',rst=rst, task=task,num=num,num1=num1,num2=num2,t=t,data=1)
-    return render_template('tasktwo.html', task=task)    
 
 
 if __name__=="__main__":
